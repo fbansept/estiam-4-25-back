@@ -4,6 +4,8 @@ import com.google.genai.Client;
 import com.google.genai.types.GenerateContentConfig;
 import com.google.genai.types.GenerateContentResponse;
 import edu.ban7.estiam425back.dto.Message;
+import edu.ban7.estiam425back.model.Plat;
+import edu.ban7.estiam425back.service.GeminiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,8 @@ public class ChatController {
     @Value("${google.api.key}")
     protected String apiKey;
 
+    protected final GeminiService geminiService;
+
     @PostMapping("/askAI")
     public ResponseEntity<String> askAI(@RequestBody Message message) {
 
@@ -31,17 +35,17 @@ public class ChatController {
         //ex : "Combien de faute d'orthographe trouves-tu dans ce message : '" + message.getContenu() + "'" +
         //" . Ne répond que par le nombre de faute."
 
-        Client client = Client.builder()
-                .apiKey(apiKey)
-                .build();
-
-        GenerateContentResponse response =
-                client.models.generateContent(
-                        "gemini-2.5-flash",
-                        "Combien il y a t-il de fautes d'orthographe dans ce texte : '" + message.getContenu() + "'. répond juste sous cette forme : 'il y a x erreurs'",
-                        null);
-
-        return ResponseEntity.ok(response.text());
+//        Client client = Client.builder()
+//                .apiKey(apiKey)
+//                .build();
+//
+//        GenerateContentResponse response =
+//                client.models.generateContent(
+//                        "gemini-2.5-flash",
+//                        "Combien il y a t-il de fautes d'orthographe dans ce texte : '" + message.getContenu() + "'. répond juste sous cette forme : 'il y a x erreurs'",
+//                        null);
+//
+//        return ResponseEntity.ok(response.text());
 
         //deuxieme solution RAG (retrieval augmented generation)
         //Utiliser une table vectorielle. pour un systeme Question / réponse
@@ -50,6 +54,11 @@ public class ChatController {
         //il va faloir a chaque nouvelle entreé (nos plat) préciser les info comme le prix, les allergène, la description etc...
         //pour ensuite utiliser une IA pour les vectoriser
         //chaque comparaison, devra au préable vectoriser la recherche du client.
+
+        Plat platSimilaire = geminiService.findMostSimilarPlat(message.getContenu());
+
+        return ResponseEntity.ok("Nous vous proposons : " + platSimilaire.getNom() + " pour " + platSimilaire.getPrix() + "€");
+
 
         //Solution hybride
         //On recherche dans une table vectorielle, et on envoie le resultat a une ia, pour qu'elle structure la reponse
